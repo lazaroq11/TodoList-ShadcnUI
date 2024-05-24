@@ -39,7 +39,7 @@ function App() {
         id: tasks.length + 1,
         name: newTaskName,
         completed: false,
-        createdAt: Date.now(), // Timestamp da criação
+        createdAt: Date.now(), 
       };
       setTasks([...tasks, newTask]);
       setNewTaskName("");
