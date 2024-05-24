@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogDescription } from './components/ui/dialog';
 import { Input } from './components/ui/input';
@@ -6,22 +6,28 @@ import { Label } from "./components/ui/label";
 import { useToast } from './components/ui/use-toast';
 import { Table, TableCaption, TableHeader, TableRow, TableHead, TableBody, TableCell } from "./components/ui/table";
 
-
 interface Task {
   id: number;
   name: string;
   completed: boolean;
+  createdAt: number; 
 }
 
 function App() {
   const { toast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 1, name: 'Fazer Compras', completed: false }
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskName, setNewTaskName] = useState("");
 
+  useEffect(() => {
+    const storedTasks = localStorage.getItem('tasks');
+    if (storedTasks) {
+      const parsedTasks: Task[] = JSON.parse(storedTasks);
+      setTasks(parsedTasks.filter(task => Date.now() - task.createdAt < 30 * 24 * 60 * 60 * 1000));
+    }
+  }, []);
+
   const toggleTaskCompletion = (taskId: number) => {
-    setTasks(tasks.map(task => 
+    setTasks(tasks.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
   };
@@ -32,10 +38,12 @@ function App() {
       const newTask = {
         id: tasks.length + 1,
         name: newTaskName,
-        completed: false
+        completed: false,
+        createdAt: Date.now(), // Timestamp da criação
       };
       setTasks([...tasks, newTask]);
       setNewTaskName("");
+      localStorage.setItem('tasks', JSON.stringify([...tasks, newTask]));
       toast({
         title: "Tarefa Criada com sucesso",
         description: "Você criou a tarefa",
@@ -45,6 +53,7 @@ function App() {
 
   const handleDeleteTask = (taskId: number) => {
     setTasks(tasks.filter(task => task.id !== taskId));
+    localStorage.setItem('tasks', JSON.stringify(tasks.filter(task => task.id !== taskId)));
     toast({
       title: "Tarefa Deletada",
       description: "Você deletou a tarefa",
@@ -90,7 +99,7 @@ function App() {
         <TableBody>
           {tasks.map(task => (
             <TableRow key={task.id}>
-              <TableCell 
+              <TableCell
                 className={`cursor-pointer ${task.completed ? 'line-through opacity-50' : ''} transition-all duration-300`}
                 onClick={() => toggleTaskCompletion(task.id)}
               >
